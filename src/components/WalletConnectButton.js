@@ -16,22 +16,19 @@ import {
   MenuList,
   MenuItem,
   Box,
-} from "@chakra-ui/react";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import React from "react";
-
-// A utility function to shorten an address, can be placed in a utils file
-const addressShortener = (address, chars = 4) => {
-  if (!address) return "";
-  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
-};
+} from '@chakra-ui/react';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { addressShortener } from 'utils';
 
 const WalletConnectButton = () => {
+  const navigate = useNavigate();
   // useDisclosure is a Chakra hook to manage modal state
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { connect, disconnect, account, wallets, connected, wallet } = useWallet();
+  const { connect, disconnect, account, wallets, connected, wallet } =
+    useWallet();
 
-  // When connected, display a Menu with info and a disconnect option
   if (connected && account) {
     const addressString = account.address.toString();
     return (
@@ -83,7 +80,7 @@ const WalletConnectButton = () => {
                   size="lg"
                   py={6}
                   variant="outline"
-                  isDisabled={walletPlugin.readyState !== "Installed"}
+                  isDisabled={walletPlugin.readyState !== 'Installed'}
                   leftIcon={
                     <Image
                       boxSize="28px"
