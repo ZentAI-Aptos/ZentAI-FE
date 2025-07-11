@@ -26,6 +26,7 @@ import { MdNotificationsNone, MdInfoOutline } from 'react-icons/md';
 import { IoMdMoon, IoMdSunny } from 'react-icons/io';
 import { FaEthereum } from 'react-icons/fa';
 import routes from 'routes';
+import WalletConnectButton from 'components/WalletConnectButton';
 export default function HeaderLinks(props) {
   const { secondary } = props;
   const { colorMode, toggleColorMode } = useColorMode();
@@ -238,7 +239,8 @@ export default function HeaderLinks(props) {
           as={colorMode === 'light' ? IoMdMoon : IoMdSunny}
         />
       </Button>
-      <Menu>
+      <WalletConnectButton />
+      {/* <Menu>
         <MenuButton p="0px">
           <Avatar
             _hover={{ cursor: 'pointer' }}
@@ -301,7 +303,7 @@ export default function HeaderLinks(props) {
             </MenuItem>
           </Flex>
         </MenuList>
-      </Menu>
+      </Menu> */}
     </Flex>
   );
 }
