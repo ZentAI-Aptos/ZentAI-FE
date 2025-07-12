@@ -21,6 +21,9 @@ import axios from "axios";
 import { useWallet,  } from "@aptos-labs/wallet-adapter-react";
 import { WalletSelector } from "@aptos-labs/wallet-adapter-react";
 import WalletConnectButton from "components/WalletConnectButton";
+import { useAptosRouterSwap } from "hooks/swapRouter";
+import { COINS } from "utils/const";
+import { useWalletBalances } from "hooks/useWalletBalances";
 
 export default function ChatBox(props) {
   const { ...rest } = props;
@@ -126,6 +129,30 @@ export default function ChatBox(props) {
     setLoading(false);
   };
 
+  const { loading:loadingSwap, txResult, swapOnPancake, swapOnLiquid } = useAptosRouterSwap();
+  const { balances, loading: balancesLoading, fetchBalances } = useWalletBalances();
+
+  useEffect(() => {
+    console.log(balances, 'balancesbalances');
+    
+  
+  }, [balances])
+  
+
+  const handlePancakeSubmit = () => {
+    console.log(COINS.APT, 'COINS.APT');
+    
+    swapOnPancake({
+      coinIn:COINS.APT.type, coinOut:COINS.USDT.type, amountIn: 0.05
+    })
+  }
+
+  const handleLiquidSubmit = () => {
+    swapOnPancake({
+      coinIn:COINS.APT, coinOut:COINS.USDT, amountIn: 0.05
+    })
+  }
+
 
   return (
     <Card align='center' direction='column' w='100%' {...rest} height='600px'>
@@ -152,6 +179,24 @@ export default function ChatBox(props) {
         <button onClick={handleSend} style={{ marginLeft: 10, padding: "8px 16px" }} disabled={loading}>
           {loading ? "..." : "Send"}
         </button>
+      </div>
+      <div>
+      <Button
+              type="submit"
+              disabled={loading || !connected}
+              onClick={handlePancakeSubmit}
+              className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+              Swap trên PancakeSwap
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !connected}
+              onClick={handleLiquidSubmit}
+              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+            >
+              Swap trên LiquidSwap
+            </Button>
       </div>
     </Card>
   );
