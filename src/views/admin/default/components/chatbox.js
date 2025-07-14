@@ -3,201 +3,318 @@ import {
   Box,
   Button,
   Flex,
-  Icon,
-  Text,
+  Input,
   useColorModeValue,
-} from "@chakra-ui/react";
-import Card from "components/card/Card.js";
-// Custom components
-import BarChart from "components/charts/BarChart";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  barChartDataConsumption,
-  barChartOptionsConsumption,
-} from "variables/charts";
-import { MdBarChart } from "react-icons/md";
-import { ChatFeed, Message } from "react-chat-ui";
-import axios from "axios";
-import { useWallet,  } from "@aptos-labs/wallet-adapter-react";
-import { WalletSelector } from "@aptos-labs/wallet-adapter-react";
-import WalletConnectButton from "components/WalletConnectButton";
-import { useAptosRouterSwap } from "hooks/swapRouter";
-import { COINS } from "utils/const";
-import { useWalletBalances } from "hooks/useWalletBalances";
+  Spinner,
+  Center,
+} from '@chakra-ui/react';
+import Card from 'components/card/Card.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChatFeed, Message } from 'react-chat-ui';
+import axios from 'axios';
+import { useWallet } from '@aptos-labs/wallet-adapter-react'; // Import useWallet
+import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
+import { useAptosRouterSwap } from 'hooks/swapRouter';
+import { COINS } from 'utils/const';
+import { useWalletBalances } from 'hooks/useWalletBalances';
+
+const aptosConfig = new AptosConfig({ network: Network.TESTNET });
+const aptos = new Aptos(aptosConfig);
+
+const TOKEN_MAP = {
+  APT: '0x1::aptos_coin::AptosCoin',
+  USDT: '0x123...::usdt::USDT', // Example: Replace with actual testnet USDT address
+  USDC: '0x456...::usdc::USDC', // Example: Replace with actual testnet USDC address
+};
 
 export default function ChatBox(props) {
   const { ...rest } = props;
-  const { connect, disconnect, account, network, isConnected, connected } = useWallet();
+  const { connect, disconnect, account, network, isConnected, connected } =
+    useWallet();
 
-  // Chakra Color Mode
-  const textColor = useColorModeValue("secondaryGray.900", "white");
-  const iconColor = useColorModeValue("brand.500", "white");
-  const bgButton = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
-  const bgHover = useColorModeValue(
-    { bg: "secondaryGray.400" },
-    { bg: "whiteAlpha.50" }
-  );
-  const bgFocus = useColorModeValue(
-    { bg: "secondaryGray.300" },
-    { bg: "whiteAlpha.100" }
-  );
-
+  // --- Component State & Hooks ---
   const [messages, setMessages] = useState([
-    new Message({ id: 1, message: "Hello! How can I help you?" }),
-    new Message({ id: 0, message: "Hi! I have a question." }),
+    new Message({ id: 1, message: 'Hello! How can I help you today?' }),
   ]);
-  const [currentInput, setCurrentInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [currentInput, setCurrentInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const chatContainerRef = useRef(null);
 
+  // --- API Endpoint ---
+  const API_ENDPOINT = 'http://localhost:8000/command'; // Replace if needed
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const codeBgColor = useColorModeValue('gray.100', 'gray.700');
+  const chatBubbleTextColor = useColorModeValue('navy.700', 'white');
+
+  // --- Main function to handle sending messages and API calls ---
   const handleSend = async () => {
-    if (currentInput.trim() === "" || loading) return;
-    const userMessage = currentInput;
-    setMessages([...messages, new Message({ id: 0, message: userMessage })]);
-    setCurrentInput("");
-    setLoading(true);
+    if (currentInput.trim() === '' || isLoading) return;
+
+    const userMessageText = currentInput;
+    const userMessage = new Message({ id: 0, message: userMessageText });
+
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setCurrentInput('');
+    setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8000/command", {
-        command: userMessage,
+      const response = await axios.post(API_ENDPOINT, {
+        command: userMessageText,
       });
 
-      // Xử lý phản hồi API (bot trả về)
-      let botReply = "";
-      if (response.data.name) {
-        // Nếu là JSON function, format lại cho dễ đọc
-        // sample data { "name": "transfer_money", "arguments": { "recipient": "Huy", "amount": 100000, "token": "USD" } }
-        botReply = "Function call: " + JSON.stringify(response.data, null, 2);
-        switch (response.data.name) {
-          case "transfer_money":
-            const { recipient, amount, token } = response?.data?.arguments;
-            const confirmMsg = `Do you want to transfer ${amount} ${token} to ${recipient}?`;
-            if (window.confirm(confirmMsg)) {
-              // Call API to confirm transfer (example endpoint)
-              try {
-                // const transferRes = await axios.post("http://localhost:8000/transfer", {
-                //   recipient,
-                //   amount,
-                //   token,
-                // });
-                botReply += "\nTransfer result: Success!";
-              } catch (transferErr) {
-                botReply += "\nTransfer failed!";
-              }
+      let botReplyText = '';
+
+      // --- Response Handling Logic ---
+      if (typeof response.data === 'object' && response.data.name) {
+        // --- COMMAND MODE ---
+        const { name, arguments: args } = response.data;
+
+        const formattedFunction = `Function Call:\n${JSON.stringify(
+          response.data,
+          null,
+          2,
+        )}`;
+        setMessages((prev) => [
+          ...prev,
+          new Message({ id: 1, message: formattedFunction, isCode: true }),
+        ]);
+
+        switch (name) {
+          case 'transfer_money':
+            const { recipient, amount, token } = args;
+            if (!recipient || !amount || !token) {
+              botReplyText =
+                'I can help with that. Please specify the recipient, amount, and token for the transfer.';
             } else {
-              botReply += "\nTransfer cancelled by user.";
-            }
-            break;
-          case "get_balance":
-            window.alert("balance is ...");
-            break;
-            case "swap_token":
-              // swap_token(from_token: string, to_token: string, amount: integer)
-            const { from_token, to_token, amount: swapAmount } = response?.data?.arguments;
-            const swapConfirmMsg = `Do you want to swap ${swapAmount} ${from_token} to ${to_token}?`;
-            if (window.confirm(swapConfirmMsg)) {
-              // Call API to confirm swap (example endpoint)
-              try {
-                // const swapRes = await axios.post("http://localhost:8000/swap", {
-                //   from_token,
-                //   to_token,
-                //   amount: swapAmount,
-                // });
-                botReply += `\nSwap result: Success! Swapped ${swapAmount} ${from_token} to ${to_token}.`;
-              } catch (swapErr) {
-                botReply += "\nSwap failed!";
+              const confirmMsg = `Do you want to transfer ${amount} ${token} to ${recipient}?`;
+              if (window.confirm(confirmMsg)) {
+                botReplyText = `Action Confirmed: Transferring ${amount} ${token} to ${recipient}.`;
+              } else {
+                botReplyText = 'Transfer cancelled by user.';
               }
             }
+            break;
+
+          case 'swap_token':
+            const { from_token, to_token, amount: swapAmount } = args;
+            if (!from_token || !to_token || !swapAmount) {
+              botReplyText =
+                'I can help with that. Please specify which token you want to swap, which token you want to receive, and the amount.';
+            } else {
+              const confirmSwapMsg = `Do you want to swap ${swapAmount} ${from_token} for ${to_token}?`;
+              if (window.confirm(confirmSwapMsg)) {
+                botReplyText = `Action Confirmed: Swapping ${swapAmount} ${from_token} for ${to_token}.`;
+              } else {
+                botReplyText = 'Swap cancelled by user.';
+              }
+            }
+            break;
+
+          case 'get_token_price':
+            const { token_name } = args;
+            if (!token_name) {
+              botReplyText = "Which token's price would you like to know?";
+            } else {
+              const price = (Math.random() * 50000 + 10000).toFixed(2);
+              botReplyText = `The current price of ${token_name.toUpperCase()} is $${price}.`;
+            }
+            break;
+
+          case 'get_balance':
+            // Ưu tiên lấy địa chỉ ví từ lệnh người dùng.
+            // Nếu không có, nó sẽ tự động dùng địa chỉ ví đang kết nối (`account?.address`).
+            const wallet = args.wallet_address || account?.address;
+            const tokenSymbol = args.token_name?.toUpperCase();
+            const tokenAddress = TOKEN_MAP[tokenSymbol];
+
+            if (!tokenSymbol) {
+              // Yêu cầu tên token nếu thiếu
+              botReplyText =
+                'I can check a balance for you. Please specify the token (e.g., APT, USDT).';
+            } else if (!tokenAddress) {
+              // Xử lý nếu tên token không được nhận dạng
+              botReplyText = `Sorry, I don't recognize the token '${tokenSymbol}'.`;
+            } else if (!wallet) {
+              // Yêu cầu kết nối ví nếu không có địa chỉ nào khả dụng
+              botReplyText =
+                'Please connect your wallet or provide a wallet address to check the balance.';
+            } else {
+              try {
+                // Logic gọi blockchain để lấy số dư thực tế
+                const resource = await aptos.getAccountResource({
+                  accountAddress: wallet,
+                  resourceType: `0x1::coin::CoinStore<${tokenAddress}>`,
+                });
+
+                const decimals = tokenSymbol === 'APT' ? 8 : 6; // Giả sử các token khác có 6 số thập phân
+                const balance =
+                  parseInt(resource.coin.value) / Math.pow(10, decimals);
+
+                const shortAddress = `${wallet.slice(0, 6)}...${wallet.slice(
+                  -4,
+                )}`;
+                botReplyText = `The balance of ${tokenSymbol} for wallet ${shortAddress} is ${balance.toFixed(
+                  4,
+                )}.`;
+              } catch (e) {
+                if (e.status === 404) {
+                  botReplyText = `The wallet does not hold any ${tokenSymbol}.`;
+                } else {
+                  console.error('Blockchain Error:', e);
+                  botReplyText =
+                    "Sorry, I couldn't fetch the balance from the blockchain.";
+                }
+              }
+            }
+            break;
+
+          default:
+            botReplyText = `Recognized function '${name}', but no handler is implemented.`;
+            break;
         }
-      } else if (response.data.raw) {
-        botReply = response.data.raw;
-      } else if (response.data) {
-        botReply = response.data;
+      } else if (typeof response.data === 'string') {
+        // --- CHAT MODE ---
+        botReplyText = response.data;
       } else {
-        botReply = "Sorry, I could not understand.";
+        botReplyText =
+          'Sorry, I received an unexpected response from the server.';
       }
 
+      if (botReplyText) {
+        setMessages((prev) => [
+          ...prev,
+          new Message({ id: 1, message: botReplyText }),
+        ]);
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      const errorMsg =
+        error.response?.data?.detail ||
+        'Sorry, an error occurred. Please try again later.';
       setMessages((prev) => [
         ...prev,
-        new Message({ id: 1, message: botReply }),
+        new Message({ id: 1, message: errorMsg }),
       ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        new Message({ id: 1, message: "Server error!" }),
-      ]);
+    } finally {
+      setIsLoading(false);
     }
-    setLoading(false);
   };
 
-  const { loading:loadingSwap, txResult, swapOnPancake, swapOnLiquid } = useAptosRouterSwap();
-  const { balances, loading: balancesLoading, fetchBalances } = useWalletBalances();
+  const customBubbleStyles = (isCode) => ({
+    text: {
+      fontSize: 16,
+      whiteSpace: isCode ? 'pre-wrap' : 'normal',
+      fontFamily: isCode ? 'monospace' : 'inherit',
+      backgroundColor: isCode ? codeBgColor : 'transparent',
+      color: chatBubbleTextColor,
+      padding: isCode ? '10px' : '0',
+      borderRadius: isCode ? '8px' : '0',
+    },
+    chatbubble: {
+      borderRadius: 20,
+      padding: 10,
+      maxWidth: '80%',
+    },
+  });
+  const {
+    loading: loadingSwap,
+    txResult,
+    swapOnPancake,
+    swapOnLiquid,
+  } = useAptosRouterSwap();
+  const {
+    balances,
+    loading: balancesLoading,
+    fetchBalances,
+  } = useWalletBalances();
 
   useEffect(() => {
     console.log(balances, 'balancesbalances');
-    
-  
-  }, [balances])
-  
+  }, [balances]);
 
   const handlePancakeSubmit = () => {
     console.log(COINS.APT, 'COINS.APT');
-    
+
     swapOnPancake({
-      coinIn:COINS.APT.type, coinOut:COINS.USDT.type, amountIn: 0.05
-    })
-  }
+      coinIn: COINS.APT.type,
+      coinOut: COINS.USDT.type,
+      amountIn: 0.05,
+    });
+  };
 
   const handleLiquidSubmit = () => {
     swapOnPancake({
-      coinIn:COINS.APT, coinOut:COINS.USDT, amountIn: 0.05
-    })
-  }
-
+      coinIn: COINS.APT,
+      coinOut: COINS.USDT,
+      amountIn: 0.05,
+    });
+  };
 
   return (
-    <Card align='center' direction='column' w='100%' {...rest} height='600px'>
-      <ChatFeed
-        style={{ width: "100%", height: "800px", overflowY: "auto" }}
-        messages={messages}
-        isTyping={false}
-        hasInputField={false}
-        showSenderName
-        bubblesCentered={false}
-        bubbleStyles={{
-          text: { fontSize: 16 },
-          chatbubble: { borderRadius: 20, padding: 10 },
+    <Card align="center" direction="column" w="100%" h="600px" {...rest}>
+      <Box
+        ref={chatContainerRef}
+        w="100%"
+        h="calc(100% - 60px)"
+        overflowY="auto"
+        css={{
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-track': { width: '6px' },
+          '&::-webkit-scrollbar-thumb': {
+            background: useColorModeValue('gray.300', 'gray.600'),
+            borderRadius: '24px',
+          },
         }}
-      />
-      <div style={{ display: "flex", marginTop: 10 }}>
-        <input
-          style={{ flex: 1, padding: 8, fontSize: 16 }}
-          value={currentInput}
-          onChange={e => setCurrentInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSend()}
-          placeholder="Type your message..."
+      >
+        <ChatFeed
+          messages={messages.map((msg) => ({
+            ...msg,
+            styles: customBubbleStyles(msg.isCode),
+          }))}
+          isTyping={isLoading}
+          hasInputField={false}
+          showSenderName
+          bubblesCentered={false}
         />
-        <button onClick={handleSend} style={{ marginLeft: 10, padding: "8px 16px" }} disabled={loading}>
-          {loading ? "..." : "Send"}
-        </button>
-      </div>
-      <div>
+      </Box>
+
+      <Flex w="100%" p="10px" mt="auto">
+        <Input
+          placeholder="Type your message..."
+          value={currentInput}
+          onChange={(e) => setCurrentInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          disabled={isLoading}
+          mr={2}
+        />
+        <Button onClick={handleSend} isLoading={isLoading} colorScheme="brand">
+          Send
+        </Button>
+      </Flex>
       <Button
-              type="submit"
-              disabled={loading || !connected}
-              onClick={handlePancakeSubmit}
-              className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              Swap trên PancakeSwap
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || !connected}
-              onClick={handleLiquidSubmit}
-              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              Swap trên LiquidSwap
-            </Button>
-      </div>
+        type="submit"
+        disabled={isLoading || !connected}
+        onClick={handlePancakeSubmit}
+        className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+      >
+        Swap trên PancakeSwap
+      </Button>
+      <Button
+        type="submit"
+        disabled={isLoading || !connected}
+        onClick={handleLiquidSubmit}
+        className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
+      >
+        Swap trên LiquidSwap
+      </Button>
     </Card>
   );
 }
