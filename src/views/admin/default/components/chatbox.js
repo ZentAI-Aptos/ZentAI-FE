@@ -12,7 +12,7 @@ import Card from 'components/card/Card.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatFeed, Message } from 'react-chat-ui';
 import axios from 'axios';
-import { useWallet } from '@aptos-labs/wallet-adapter-react'; // Import useWallet
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { useAptosRouterSwap } from 'hooks/swapRouter';
 import { COINS } from 'utils/const';
@@ -21,18 +21,11 @@ import { useWalletBalances } from 'hooks/useWalletBalances';
 const aptosConfig = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(aptosConfig);
 
-const TOKEN_MAP = {
-  APT: '0x1::aptos_coin::AptosCoin',
-  USDT: '0x123...::usdt::USDT', // Example: Replace with actual testnet USDT address
-  USDC: '0x456...::usdc::USDC', // Example: Replace with actual testnet USDC address
-};
-
 export default function ChatBox(props) {
   const { ...rest } = props;
   const { connect, disconnect, account, network, isConnected, connected } =
     useWallet();
 
-  // --- Component State & Hooks ---
   const [messages, setMessages] = useState([
     new Message({ id: 1, message: 'Hello! How can I help you today?' }),
   ]);
@@ -40,10 +33,8 @@ export default function ChatBox(props) {
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef(null);
 
-  // --- API Endpoint ---
-  const API_ENDPOINT = 'http://localhost:8000/command'; // Replace if needed
+  const API_ENDPOINT = 'http://localhost:8000/command';
 
-  // Auto-scroll effect
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
@@ -51,10 +42,16 @@ export default function ChatBox(props) {
     }
   }, [messages]);
 
-  const codeBgColor = useColorModeValue('gray.100', 'gray.700');
-  const chatBubbleTextColor = useColorModeValue('navy.700', 'white');
+  const codeBgColor = useColorModeValue('red', 'red');
+  const chatBubbleTextColor = useColorModeValue('#000', 'red');
 
-  // --- Main function to handle sending messages and API calls ---
+  // Hook to automatically fetch balances for the connected wallet
+  const {
+    balances: connectedWalletBalances,
+    loading: balancesLoading,
+    fetchExternalBalance,
+  } = useWalletBalances();
+
   const handleSend = async () => {
     if (currentInput.trim() === '' || isLoading) return;
 
@@ -72,9 +69,7 @@ export default function ChatBox(props) {
 
       let botReplyText = '';
 
-      // --- Response Handling Logic ---
       if (typeof response.data === 'object' && response.data.name) {
-        // --- COMMAND MODE ---
         const { name, arguments: args } = response.data;
 
         const formattedFunction = `Function Call:\n${JSON.stringify(
@@ -82,10 +77,10 @@ export default function ChatBox(props) {
           null,
           2,
         )}`;
-        setMessages((prev) => [
-          ...prev,
-          new Message({ id: 1, message: formattedFunction, isCode: true }),
-        ]);
+        // setMessages((prev) => [
+        //   ...prev,
+        //   new Message({ id: 1, message: formattedFunction, isCode: true }),
+        // ]);
 
         switch (name) {
           case 'transfer_money':
@@ -129,48 +124,54 @@ export default function ChatBox(props) {
             break;
 
           case 'get_balance':
-            // Ưu tiên lấy địa chỉ ví từ lệnh người dùng.
-            // Nếu không có, nó sẽ tự động dùng địa chỉ ví đang kết nối (`account?.address`).
-            const wallet = args.wallet_address || account?.address;
+            const externalWalletAddress =
+              args.wallet_address || account?.address?.toString();
             const tokenSymbol = args.token_name?.toUpperCase();
-            const tokenAddress = TOKEN_MAP[tokenSymbol];
 
             if (!tokenSymbol) {
-              // Yêu cầu tên token nếu thiếu
               botReplyText =
                 'I can check a balance for you. Please specify the token (e.g., APT, USDT).';
-            } else if (!tokenAddress) {
-              // Xử lý nếu tên token không được nhận dạng
-              botReplyText = `Sorry, I don't recognize the token '${tokenSymbol}'.`;
-            } else if (!wallet) {
-              // Yêu cầu kết nối ví nếu không có địa chỉ nào khả dụng
-              botReplyText =
-                'Please connect your wallet or provide a wallet address to check the balance.';
-            } else {
+            } else if (externalWalletAddress) {
+              // Handle external wallet check
+              const shortAddress = `${externalWalletAddress.slice(
+                0,
+                6,
+              )}...${externalWalletAddress.slice(-4)}`;
               try {
-                // Logic gọi blockchain để lấy số dư thực tế
-                const resource = await aptos.getAccountResource({
-                  accountAddress: wallet,
-                  resourceType: `0x1::coin::CoinStore<${tokenAddress}>`,
-                });
+                const result = await fetchExternalBalance(
+                  externalWalletAddress,
+                  tokenSymbol,
+                );
+                console.log(
+                  `Fetched external balance for ${tokenSymbol}:`,
+                  result,
+                );
 
-                const decimals = tokenSymbol === 'APT' ? 8 : 6; // Giả sử các token khác có 6 số thập phân
-                const balance =
-                  parseInt(resource.coin.value) / Math.pow(10, decimals);
-
-                const shortAddress = `${wallet.slice(0, 6)}...${wallet.slice(
-                  -4,
-                )}`;
-                botReplyText = `The balance of ${tokenSymbol} for wallet ${shortAddress} is ${balance.toFixed(
+                botReplyText = `The balance of ${tokenSymbol} for wallet ${shortAddress} is ${result.amount.toFixed(
                   4,
                 )}.`;
-              } catch (e) {
-                if (e.status === 404) {
-                  botReplyText = `The wallet does not hold any ${tokenSymbol}.`;
+              } catch (error) {
+                botReplyText = error.message;
+              }
+            } else {
+              // Handle connected wallet check
+              if (!account?.address) {
+                botReplyText = 'Please connect your wallet first.';
+              } else if (balancesLoading) {
+                botReplyText =
+                  'Still fetching your wallet balances, please wait a moment...';
+              } else {
+                const tokenInfo = connectedWalletBalances[tokenSymbol];
+                if (tokenInfo) {
+                  const shortAddress = `${account.address.slice(
+                    0,
+                    6,
+                  )}...${account.address.slice(-4)}`;
+                  botReplyText = `The balance of ${tokenSymbol} for your wallet ${shortAddress} is ${tokenInfo.amount.toFixed(
+                    4,
+                  )}.`;
                 } else {
-                  console.error('Blockchain Error:', e);
-                  botReplyText =
-                    "Sorry, I couldn't fetch the balance from the blockchain.";
+                  botReplyText = `Could not find balance for token '${tokenSymbol}'. It might not be supported or you may not have any.`;
                 }
               }
             }
@@ -181,7 +182,6 @@ export default function ChatBox(props) {
             break;
         }
       } else if (typeof response.data === 'string') {
-        // --- CHAT MODE ---
         botReplyText = response.data;
       } else {
         botReplyText =
@@ -213,7 +213,7 @@ export default function ChatBox(props) {
       fontSize: 16,
       whiteSpace: isCode ? 'pre-wrap' : 'normal',
       fontFamily: isCode ? 'monospace' : 'inherit',
-      backgroundColor: isCode ? codeBgColor : 'transparent',
+      backgroundColor: isCode ? codeBgColor : 'red',
       color: chatBubbleTextColor,
       padding: isCode ? '10px' : '0',
       borderRadius: isCode ? '8px' : '0',
@@ -230,19 +230,12 @@ export default function ChatBox(props) {
     swapOnPancake,
     swapOnLiquid,
   } = useAptosRouterSwap();
-  const {
-    balances,
-    loading: balancesLoading,
-    fetchBalances,
-  } = useWalletBalances();
 
   useEffect(() => {
-    console.log(balances, 'balancesbalances');
-  }, [balances]);
+    console.log(connectedWalletBalances, 'balancesbalances');
+  }, [connectedWalletBalances]);
 
   const handlePancakeSubmit = () => {
-    console.log(COINS.APT, 'COINS.APT');
-
     swapOnPancake({
       coinIn: COINS.APT.type,
       coinOut: COINS.USDT.type,
@@ -251,15 +244,23 @@ export default function ChatBox(props) {
   };
 
   const handleLiquidSubmit = () => {
-    swapOnPancake({
-      coinIn: COINS.APT,
-      coinOut: COINS.USDT,
+    // Corrected to call swapOnLiquid and pass correct parameters
+    swapOnLiquid({
+      coinIn: COINS.APT.type,
+      coinOut: COINS.USDT.type,
       amountIn: 0.05,
+      minAmountOut: 0, // In a real app, you'd calculate this
     });
   };
 
   return (
-    <Card align="center" direction="column" w="100%" h="600px" {...rest}>
+    <Card
+      align="center"
+      direction="column"
+      w="100%"
+      h="calc(100vh - 160px)"
+      {...rest}
+    >
       <Box
         ref={chatContainerRef}
         w="100%"
@@ -275,14 +276,23 @@ export default function ChatBox(props) {
         }}
       >
         <ChatFeed
-          messages={messages.map((msg) => ({
-            ...msg,
-            styles: customBubbleStyles(msg.isCode),
-          }))}
+          messages={messages}
           isTyping={isLoading}
           hasInputField={false}
           showSenderName
           bubblesCentered={false}
+          bubbleStyles={{
+            text: {
+              fontSize: 16,
+              color: chatBubbleTextColor,
+            },
+            chatbubble: {
+              borderRadius: 20,
+              padding: 10,
+              maxWidth: '80%',
+              // Bạn có thể thêm các style chung khác tại đây
+            },
+          }}
         />
       </Box>
 
@@ -299,22 +309,6 @@ export default function ChatBox(props) {
           Send
         </Button>
       </Flex>
-      <Button
-        type="submit"
-        disabled={isLoading || !connected}
-        onClick={handlePancakeSubmit}
-        className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
-        Swap trên PancakeSwap
-      </Button>
-      <Button
-        type="submit"
-        disabled={isLoading || !connected}
-        onClick={handleLiquidSubmit}
-        className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
-        Swap trên LiquidSwap
-      </Button>
     </Card>
   );
 }
