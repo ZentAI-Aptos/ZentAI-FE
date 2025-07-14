@@ -1,22 +1,21 @@
 // Chakra imports
+import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import {
   Box,
   Button,
   Flex,
   Input,
-  useColorModeValue,
-  Spinner,
-  Center,
+  useColorModeValue
 } from '@chakra-ui/react';
-import Card from 'components/card/Card.js';
-import React, { useState, useEffect, useRef } from 'react';
-import { ChatFeed, Message } from 'react-chat-ui';
 import axios from 'axios';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
+import Card from 'components/card/Card.js';
+import ChatBubbles from 'components/chatUI/ChatBubbles';
 import { useAptosRouterSwap } from 'hooks/swapRouter';
-import { COINS } from 'utils/const';
 import { useWalletBalances } from 'hooks/useWalletBalances';
+import { useEffect, useRef, useState } from 'react';
+import { Message } from 'react-chat-ui';
+import { COINS } from 'utils/const';
 
 const aptosConfig = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(aptosConfig);
@@ -27,7 +26,7 @@ export default function ChatBox(props) {
     useWallet();
 
   const [messages, setMessages] = useState([
-    new Message({ id: 1, message: 'Hello! How can I help you today?' }),
+    { id: 1, message: 'Hello! How can I help you today?' },
   ]);
   const [currentInput, setCurrentInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,9 +40,6 @@ export default function ChatBox(props) {
         chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const codeBgColor = useColorModeValue('red', 'red');
-  const chatBubbleTextColor = useColorModeValue('#000', 'red');
 
   // Hook to automatically fetch balances for the connected wallet
   const {
@@ -208,22 +204,6 @@ export default function ChatBox(props) {
     }
   };
 
-  const customBubbleStyles = (isCode) => ({
-    text: {
-      fontSize: 16,
-      whiteSpace: isCode ? 'pre-wrap' : 'normal',
-      fontFamily: isCode ? 'monospace' : 'inherit',
-      backgroundColor: isCode ? codeBgColor : 'red',
-      color: chatBubbleTextColor,
-      padding: isCode ? '10px' : '0',
-      borderRadius: isCode ? '8px' : '0',
-    },
-    chatbubble: {
-      borderRadius: 20,
-      padding: 10,
-      maxWidth: '80%',
-    },
-  });
   const {
     loading: loadingSwap,
     txResult,
@@ -275,25 +255,7 @@ export default function ChatBox(props) {
           },
         }}
       >
-        <ChatFeed
-          messages={messages}
-          isTyping={isLoading}
-          hasInputField={false}
-          showSenderName
-          bubblesCentered={false}
-          bubbleStyles={{
-            text: {
-              fontSize: 16,
-              color: chatBubbleTextColor,
-            },
-            chatbubble: {
-              borderRadius: 20,
-              padding: 10,
-              maxWidth: '80%',
-              // Bạn có thể thêm các style chung khác tại đây
-            },
-          }}
-        />
+        <ChatBubbles messages={messages} isLoading={isLoading} />
       </Box>
 
       <Flex w="100%" p="10px" mt="auto">
@@ -304,8 +266,9 @@ export default function ChatBox(props) {
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           disabled={isLoading}
           mr={2}
+          borderRadius="100px"
         />
-        <Button onClick={handleSend} isLoading={isLoading} colorScheme="brand">
+        <Button onClick={handleSend} isLoading={isLoading} colorScheme="brand" borderRadius="100px">
           Send
         </Button>
       </Flex>

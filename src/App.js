@@ -7,6 +7,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import initialTheme from './theme/theme';
 import { useState } from 'react';
 import RouteGuard from 'components/auth/RouteGuard';
+import './App.css';
 
 export default function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);
