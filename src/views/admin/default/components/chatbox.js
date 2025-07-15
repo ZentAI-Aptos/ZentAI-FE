@@ -1,13 +1,7 @@
 // Chakra imports
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import {
-  Box,
-  Button,
-  Flex,
-  Input,
-  useColorModeValue
-} from '@chakra-ui/react';
+import { Box, Button, Flex, Input, useColorModeValue } from '@chakra-ui/react';
 import axios from 'axios';
 import Card from 'components/card/Card.js';
 import ChatBubbles from 'components/chatUI/ChatBubbles';
@@ -85,12 +79,22 @@ export default function ChatBox(props) {
               botReplyText =
                 'I can help with that. Please specify the recipient, amount, and token for the transfer.';
             } else {
-              const confirmMsg = `Do you want to transfer ${amount} ${token} to ${recipient}?`;
-              if (window.confirm(confirmMsg)) {
-                botReplyText = `Action Confirmed: Transferring ${amount} ${token} to ${recipient}.`;
-              } else {
-                botReplyText = 'Transfer cancelled by user.';
-              }
+              // const confirmMsg = `Do you want to transfer ${amount} ${token} to ${recipient}?`;
+              // if (window.confirm(confirmMsg)) {
+              //   botReplyText = `Action Confirmed: Transferring ${amount} ${token} to ${recipient}.`;
+              // } else {
+              //   botReplyText = 'Transfer cancelled by user.';
+              // }
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: 1,
+                  action: name,
+                  address: recipient,
+                  token: token,
+                  amount: amount,
+                },
+              ]);
             }
             break;
 
@@ -143,9 +147,19 @@ export default function ChatBox(props) {
                   result,
                 );
 
-                botReplyText = `The balance of ${tokenSymbol} for wallet ${shortAddress} is ${result.amount.toFixed(
-                  4,
-                )}.`;
+                // botReplyText = `The balance of ${tokenSymbol} for wallet ${shortAddress} is ${result.amount.toFixed(
+                //   4,
+                // )}.`;
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: 1,
+                    action: name,
+                    address: externalWalletAddress,
+                    token: tokenSymbol,
+                    amount: result.amount,
+                  },
+                ]);
               } catch (error) {
                 botReplyText = error.message;
               }
@@ -163,9 +177,19 @@ export default function ChatBox(props) {
                     0,
                     6,
                   )}...${account.address.slice(-4)}`;
-                  botReplyText = `The balance of ${tokenSymbol} for your wallet ${shortAddress} is ${tokenInfo.amount.toFixed(
-                    4,
-                  )}.`;
+                  // botReplyText = `The balance of ${tokenSymbol} for your wallet ${shortAddress} is ${tokenInfo.amount.toFixed(
+                  //   4,
+                  // )}.`;
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: 1,
+                      action: name,
+                      address: externalWalletAddress,
+                      token: tokenSymbol,
+                      amount: tokenInfo.amount,
+                    },
+                  ]);
                 } else {
                   botReplyText = `Could not find balance for token '${tokenSymbol}'. It might not be supported or you may not have any.`;
                 }
@@ -240,6 +264,7 @@ export default function ChatBox(props) {
       w="100%"
       h="calc(100vh - 160px)"
       {...rest}
+      px={0}
     >
       <Box
         ref={chatContainerRef}
@@ -268,7 +293,12 @@ export default function ChatBox(props) {
           mr={2}
           borderRadius="100px"
         />
-        <Button onClick={handleSend} isLoading={isLoading} colorScheme="brand" borderRadius="100px">
+        <Button
+          onClick={handleSend}
+          isLoading={isLoading}
+          colorScheme="brand"
+          borderRadius="100px"
+        >
           Send
         </Button>
       </Flex>
