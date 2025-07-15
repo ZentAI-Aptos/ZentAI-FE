@@ -4,6 +4,7 @@ import { addressShortener } from 'utils';
 import { roundDown } from 'utils';
 import { useAptosTransfer } from 'hooks/transferToken';
 import toast from 'react-hot-toast';
+import AddressCopier from 'components/addresscopier';
 
 const BotMessageRender = ({ msg }) => {
   const [actionStatus, setActionStatus] = useState('pending');
@@ -84,15 +85,108 @@ const BotMessageRender = ({ msg }) => {
           <Flex
             sx={{
               justifyContent: 'space-between',
-              alignItems: 'center',
               width: '100%',
               mt: '16px',
             }}
+            align="flex-end"
           >
-            <Text>to {addressShortener(msg?.address)}</Text>
-            <Flex gap="4px">
+            <Flex align="flex-end" gap="4px">
+              <Text>to</Text>
+              <AddressCopier address={msg?.address} />
+            </Flex>
+            <Flex align="flex-end" gap="4px">
               <Text fontWeight="bold">{roundDown(msg?.amount, 4)}</Text>
               <Text fontWeight="bold">{msg?.token}</Text>
+            </Flex>
+          </Flex>
+        </Flex>
+        {actionStatus === 'pending' && (
+          <Flex mt="8px" gap="4px">
+            <Button
+              borderRadius="8px"
+              w="100%"
+              variant="outline"
+              colorScheme="brand"
+              onClick={() => setActionStatus('canceled')}
+              isDisabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              borderRadius="8px"
+              w="100%"
+              variant="solid"
+              colorScheme="brand"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await transfer(msg?.address, msg?.amount, msg?.token);
+                  setActionStatus('confirmed');
+                  toast.success('Transfer successful!');
+                } catch (e) {
+                  if (e?.message) toast.error(e.message);
+                  setActionStatus('pending');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              isLoading={loading}
+            >
+              Confirm
+            </Button>
+          </Flex>
+        )}
+      </Flex>
+    );
+  if (msg?.action == 'swap_token')
+    return (
+      <Flex
+        sx={{
+          minW: '320px',
+          flexDirection: 'column',
+          alignSelf: 'flex-start',
+        }}
+      >
+        <Flex
+          sx={{
+            flexDirection: 'column',
+            boxShadow: '1px 2px 8px rgba(0, 0, 0, 0.12)',
+            borderRadius: '8px',
+            px: '12px',
+            py: '12px',
+            w: '100%',
+            alignItems: 'flex-start',
+          }}
+        >
+          <Flex
+            sx={{
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <Text fontWeight="bold">Swap token</Text>
+            {actionStatus === 'pending' ? (
+              <Text color="orange.500">Pending</Text>
+            ) : actionStatus === 'confirmed' ? (
+              <Text color="green.500">Confirmed</Text>
+            ) : (
+              <Text color="gray.500">Canceled</Text>
+            )}
+          </Flex>
+          <Flex
+            sx={{
+              justifyContent: 'space-between',
+              width: '100%',
+              mt: '16px',
+            }}
+            align="flex-end"
+          >
+            <Flex align="flex-end" gap="4px">
+              <Text fontWeight="bold">{msg?.amount} {msg?.from}</Text>
+            </Flex>
+            <Flex align="flex-end" gap="4px">
+              <Text fontWeight="bold">{msg?.to}</Text>
             </Flex>
           </Flex>
         </Flex>
@@ -147,12 +241,13 @@ const BotMessageRender = ({ msg }) => {
         // boxShadow="md"
         wordBreak="break-word"
       >
-        <Text textAlign="left" whiteSpace="pre-line">{msg.message}</Text>
+        <Text textAlign="left" whiteSpace="pre-line">
+          {msg.message}
+        </Text>
       </Box>
     </Flex>
   );
 };
-
 
 export default function ChatBubbles({ messages, isLoading }) {
   const userBg = useColorModeValue('blue.500', 'blue.400');

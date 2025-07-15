@@ -14,11 +14,15 @@ export const formatNumToBNEther = (number = 0, decimal = 6) => {
     toast.error('error format number');
   }
 };
-export function roundUp(v, n = 4) {
-  return Math.ceil(v * Math.pow(10, n)) / Math.pow(10, n);
-}
 
-export function roundDown(number, decimals = 4) {
-  decimals = decimals || 0;
-  return Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals);
-}
+export const roundUp = (v, n = 4) =>
+  Math.ceil(v * Math.pow(10, n)) / Math.pow(10, n);
+
+export const roundDown = (number, decimals = 4) =>
+  Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals);
+
+export const isAptosAddress = (addr) => {
+  if (typeof addr !== 'string') return false;
+  const re = /^(0x)?[0-9a-fA-F]{1,64}$/;
+  return re.test(addr);
+};
