@@ -165,6 +165,24 @@ export default function ChatBox(props) {
             }
             break;
           }
+          case 'deposit_vault': {
+            const { amount, token } = args;
+            if (!amount || !token) {
+              botReplyText =
+                'Please specify the amount and token you want to deposit.';
+            } else {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: 1,
+                  action: name,
+                  amount: amount,
+                  token: token.toUpperCase(),
+                },
+              ]);
+            }
+            break;
+          }
           default:
             botReplyText = `Recognized function '${name}', but no handler is implemented.`;
         }
@@ -192,78 +210,6 @@ export default function ChatBox(props) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const {
-    loading: loadingSwap,
-    txResult,
-    swapOnPancake,
-    swapOnLiquid,
-  } = useAptosRouterSwap();
-
-  const handlePancakeSubmit = () => {
-    swapOnPancake({
-      coinIn: COINS.APT.type,
-      coinOut: COINS.USDT.type,
-      amountIn: 0.05,
-    });
-  };
-
-  const handleLiquidSubmit = () => {
-    swapOnLiquid({
-      coinIn: COINS.APT.type,
-      coinOut: COINS.USDT.type,
-      amountIn: 0.05,
-      minAmountOut: 0,
-    });
-  };
-
-  const toHexString = (bytes) =>
-    bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
-
-  const { loading, deposit, withdraw } = useShieldedVault();
-
-  const handleDeposit = async () => {
-    console.log('Depositing funds...');
-
-    // 1. Generate cryptographic data off-chain
-    const amount = 100000000; // 1 APT
-    const commitmentPoint = `${toHexString(
-      new TextEncoder().encode('mock_commitment_point'),
-    )}`;
-    const ciphertext = `${toHexString(
-      new TextEncoder().encode('mock_ciphertext'),
-    )}`;
-
-    // 2. Call the contract with the generated data
-    const depositParams = {
-      coinType: COINS.APT.type,
-      amount,
-      commitmentPoint,
-      ciphertext,
-    };
-    await deposit(depositParams);
-  };
-
-  const handleWithdraw = async () => {
-    console.log('Withdrawing funds...');
-
-    // 1. Define transaction parameters
-    const amountToWithdraw = 50000000; // 0.5 APT
-    const recipient = '0x_some_address';
-
-    // 2. Fetch the user's private note and its Merkle proof from local storage/state
-    const inputNote = { value: 100000000, blindingFactor: '...' }; // User must track their notes
-
-    // 3. Generate all required proofs off-chain
-
-    // 4. Call the contract with the generated proofs
-    const withdrawParams = {
-      coinType: COINS.APT.type,
-      amount: amountToWithdraw,
-      recipient,
-    };
-    await withdraw(withdrawParams);
   };
 
   return (
@@ -311,22 +257,6 @@ export default function ChatBox(props) {
           Send
         </Button>
       </Flex>
-      <Button
-        type="submit"
-        disabled={isLoading}
-        onClick={handlePancakeSubmit}
-        className="w-full mt-6 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
-        Swap trên PancakeSwap
-      </Button>
-      <Button
-        type="submit"
-        disabled={isLoading}
-        onClick={handleDeposit}
-        className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
-      >
-        deposit
-      </Button>
     </Card>
   );
 }

@@ -18,6 +18,8 @@ const toRawAmount = (amount, coinType) => {
   if (!coin) throw new Error('Unknown coin type');
   return Math.floor(parseFloat(amount) * Math.pow(10, coin.decimals));
 };
+const ACCEPTED_FROM_COINS = [{ symbol: 'APT', type: COINS.APT.type }];
+const ACCEPTED_TO_COINS = [{ symbol: 'USDT', type: COINS.USDT.type }];
 
 const buildPancakeSwapPayload = async ({
   coinIn,
@@ -89,13 +91,54 @@ export const useAptosRouterSwap = () => {
     },
     [account, signAndSubmitTransaction],
   );
-  const getSwapInfo = async () => {
-    
-  }
+  const getSwapInfo = async () => {};
 
-  const swapOnPancake = (params) =>
-    executeSwap(buildPancakeSwapPayload, params);
-  const swapOnLiquid = (params) => executeSwap(buildLiquidSwapPayload, params);
+  const swapOnPancake = async (from, to, amount) => {
+    const fromCoin = ACCEPTED_FROM_COINS.find(
+      (coin) => coin.symbol.toUpperCase() === from.toUpperCase(),
+    );
+    const toCoin = ACCEPTED_TO_COINS.find(
+      (coin) => coin.symbol.toUpperCase() === to.toUpperCase(),
+    );
+    console.log(fromCoin);
+    if (!fromCoin || !toCoin) {
+      throw new Error(
+        `Unsupported swap from ${from} to ${to}. Supported pairs: ${ACCEPTED_FROM_COINS.map(
+          (c) => c.symbol,
+        ).join(', ')} to ${ACCEPTED_TO_COINS.map((c) => c.symbol).join(', ')}`,
+      );
+    }
+    const params = {
+      coinIn: fromCoin.type,
+      coinOut: toCoin.type,
+      amountIn: amount,
+      minAmountOut: 0.01, // Set a minimum output amount
+    };
+    return executeSwap(buildPancakeSwapPayload, params);
+  };
+
+  const swapOnLiquid = async (from, to, amount) => {
+    const fromCoin = ACCEPTED_FROM_COINS.find(
+      (coin) => coin.symbol.toUpperCase() === from.toUpperCase(),
+    );
+    const toCoin = ACCEPTED_TO_COINS.find(
+      (coin) => coin.symbol.toUpperCase() === to.toUpperCase(),
+    );
+    if (!fromCoin || !toCoin) {
+      throw new Error(
+        `Unsupported swap from ${from} to ${to}. Supported pairs: ${ACCEPTED_FROM_COINS.map(
+          (c) => c.symbol,
+        ).join(', ')} to ${ACCEPTED_TO_COINS.map((c) => c.symbol).join(', ')}`,
+      );
+    }
+    const params = {
+      coinIn: fromCoin.type,
+      coinOut: toCoin.type,
+      amountIn: amount,
+      minAmountOut: 0.01, // Set a minimum output amount
+    };
+    return executeSwap(buildLiquidSwapPayload, params);
+  };
 
   return {
     loading,

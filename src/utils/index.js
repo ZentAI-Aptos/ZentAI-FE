@@ -1,5 +1,6 @@
 import { formatUnits, parseUnits } from 'ethers';
 import toast from 'react-hot-toast';
+import { COINS } from './const';
 
 export const addressShortener = (addr = '', digits = 5) => {
   digits = 2 * digits >= addr.length ? addr.length : digits;
@@ -25,4 +26,11 @@ export const isAptosAddress = (addr) => {
   if (typeof addr !== 'string') return false;
   const re = /^(0x)?[0-9a-fA-F]{1,64}$/;
   return re.test(addr);
+};
+export const toHexString = (bytes) =>
+  bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+export const toRawAmount = (amount, coinType) => {
+  const coin = Object.values(COINS).find((c) => c.type === coinType);
+  if (!coin) throw new Error('Unknown coin type');
+  return Math.floor(parseFloat(amount) * Math.pow(10, coin.decimals));
 };
