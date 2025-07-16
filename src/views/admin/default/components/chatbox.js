@@ -17,6 +17,7 @@ import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { useAptosRouterSwap } from 'hooks/swapRouter';
 import { COINS } from 'utils/const';
 import { useWalletBalances } from 'hooks/useWalletBalances';
+import { useShieldedVault } from 'hooks/useShieldedVault';
 
 const aptosConfig = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(aptosConfig);
@@ -258,6 +259,50 @@ export default function ChatBox(props) {
     });
   };
 
+  const toHexString = (bytes) =>
+    bytes.reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
+
+  const { loading, deposit, withdraw } = useShieldedVault();
+
+  const handleDeposit = async () => {
+    console.log("Depositing funds...");
+    
+    // 1. Generate cryptographic data off-chain
+    const amount = 100000000; // 1 APT
+    const commitmentPoint = `${toHexString(new TextEncoder().encode('mock_commitment_point'))}`;
+    const ciphertext = `${toHexString(new TextEncoder().encode('mock_ciphertext'))}`;
+
+    // 2. Call the contract with the generated data
+    const depositParams = {
+      coinType: COINS.APT.type,
+      amount,
+      commitmentPoint,
+      ciphertext,
+    };
+    await deposit(depositParams);
+  };
+
+  const handleWithdraw = async () => {
+    console.log("Withdrawing funds...");
+     
+    // 1. Define transaction parameters
+    const amountToWithdraw = 50000000; // 0.5 APT
+    const recipient = '0x_some_address';
+
+    // 2. Fetch the user's private note and its Merkle proof from local storage/state
+    const inputNote = { value: 100000000, blindingFactor: '...' }; // User must track their notes
+
+    // 3. Generate all required proofs off-chain
+  
+    // 4. Call the contract with the generated proofs
+    const withdrawParams = {
+      coinType: COINS.APT.type,
+      amount: amountToWithdraw,
+      recipient,
+    };
+    await withdraw(withdrawParams);
+  };
+
   return (
     <Card align="center" direction="column" w="100%" h="600px" {...rest}>
       <Box
@@ -310,10 +355,10 @@ export default function ChatBox(props) {
       <Button
         type="submit"
         disabled={isLoading || !connected}
-        onClick={handleLiquidSubmit}
+        onClick={handleDeposit}
         className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed"
       >
-        Swap trên LiquidSwap
+        deposit
       </Button>
     </Card>
   );

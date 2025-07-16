@@ -6,6 +6,11 @@ export const DATASET_CONTRACT= {
     packageId: '0x64996b8dbbc6309fd6ae95c2a76b3e5992fabcb82b4dd7c67cc4b85ff230e0dd',
     
 }
+
+export const VAULT_CONTRACT_ADDRESS = {
+    packageId: "0x3f961f8d17a9c7bd42b1ccb1c16ede72525c992e6d8bbf49817a1dda85eaed58"
+}
+
 export const COINS = {
     APT: {
       type: '0x1::aptos_coin::AptosCoin',
