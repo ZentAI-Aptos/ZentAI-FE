@@ -10,9 +10,6 @@ import { useWalletBalances } from 'hooks/useWalletBalances';
 import { Message } from 'react-chat-ui';
 import { COINS } from 'utils/const';
 
-const aptosConfig = new AptosConfig({ network: Network.TESTNET });
-const aptos = new Aptos(aptosConfig);
-
 export default function ChatBox(props) {
   const { ...rest } = props;
   const { account } = useWallet();
