@@ -26,6 +26,11 @@ export function SidebarLinks(props) {
   // this function creates the links from the secondary accordions (for example auth -> sign-in -> default)
   const createLinks = (routes) => {
     return routes.map((route, index) => {
+      const url = `${route.layout}${route.path}`;
+      console.log("route",url );
+      if(["/auth/sign-in"].includes(url)) {
+        return null
+      }
       if (route.category) {
         return (
           <>

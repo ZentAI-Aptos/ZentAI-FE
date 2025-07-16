@@ -1,0 +1,34 @@
+[
+  {
+    "asset": "USDC (vault)",
+    "amount": 1200,
+    "value": "$1,200",
+    "stakedAt": "-",
+    "apy": "-",
+    "actions": "Withdraw"
+  },
+  {
+    "asset": "yvUSDC (Yearn)  ",
+    "amount": 10000,
+    "value": "$10,150",
+    "stakedAt": "Yearn Finance",
+    "apy": "5.2%",
+    "actions": "Claim Yield"
+  },
+  {
+    "asset": "ETH (vault)",
+    "amount": 0.5,
+    "value": "$1,900",
+    "stakedAt": "-",
+    "apy": "-",
+    "actions": "Withdraw"
+  },
+  {
+    "asset": "aETH (Aave)",
+    "amount": 2.5,
+    "value": "$4,800",
+    "stakedAt": "Aave Lending",
+    "apy": "3.1%",
+    "actions": "Claim Yield"
+  }
+]

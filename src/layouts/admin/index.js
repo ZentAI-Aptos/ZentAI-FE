@@ -1,5 +1,6 @@
 // Chakra imports
-import { Portal, Box, useDisclosure, SimpleGrid } from '@chakra-ui/react';
+import { Portal, Box, useDisclosure, SimpleGrid, Grid } from '@chakra-ui/react';
+import ChatBox from 'components/chatbox';
 import Footer from 'components/footer/FooterAdmin.js';
 // Layout components
 import Navbar from 'components/navbar/NavbarAdmin.js';
@@ -8,7 +9,6 @@ import { SidebarContext } from 'contexts/SidebarContext';
 import React, { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import routes from 'routes.js';
-import ChatBox from 'views/admin/default/components/chatbox';
 
 // Custom Chakra theme
 export default function Dashboard(props) {
@@ -152,8 +152,12 @@ export default function Dashboard(props) {
                 minH="100vh"
                 pt="50px"
               >
-                <SimpleGrid
-                  columns={{ base: 1, md: 2, xl: 2 }}
+                <Grid
+                  templateColumns={{
+                    base: '1fr',
+                    md: '1fr 600px',
+                    xl: '1fr 600px',
+                  }}
                   gap="32px"
                 >
                   <Routes>
@@ -164,7 +168,7 @@ export default function Dashboard(props) {
                     />
                   </Routes>
                   <ChatBox mt="80px" />
-                </SimpleGrid>
+                </Grid>
               </Box>
             ) : null}
             <Box>

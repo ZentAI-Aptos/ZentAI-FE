@@ -21,6 +21,7 @@ import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addressShortener } from 'utils';
+import AddressCopier from './addresscopier';
 
 const WalletConnectButton = () => {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const WalletConnectButton = () => {
                 borderRadius="full"
               />
               <Text>{wallet?.name}</Text>
+              <AddressCopier address={addressString} />
             </HStack>
           </Box>
           <MenuItem onClick={disconnect}>Disconnect</MenuItem>

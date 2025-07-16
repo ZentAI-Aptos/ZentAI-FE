@@ -34,7 +34,7 @@ const AddressCopier = ({ address, digits = 5, ...rest}) => {
       </Text>
       <IconButton
         mb="-4px"
-        ml="-4px"
+        ml={0}
         aria-label="Copy address"
         icon={hasCopied ? <CheckIcon /> : <CopyIcon />}
         size="sm"
