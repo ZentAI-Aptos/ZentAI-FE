@@ -4,6 +4,7 @@ import {
   Button,
   Flex,
   Icon,
+  Image,
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
@@ -15,13 +16,15 @@ import { IoCheckmarkCircle } from 'react-icons/io5';
 import { MdBarChart, MdOutlineCalendarToday } from 'react-icons/md';
 // Assets
 import { RiArrowUpSFill } from 'react-icons/ri';
+import { roundDown } from 'utils';
+import { roundUp } from 'utils';
 import {
   lineChartDataTotalSpent,
   lineChartOptionsTotalSpent,
 } from 'variables/charts';
 
 export default function TotalSpent(props) {
-  const { ...rest } = props;
+  const { balance, ...rest } = props;
 
   // Chakra Color Mode
 
@@ -47,7 +50,9 @@ export default function TotalSpent(props) {
       mb="0px"
       {...rest}
     >
-      <Text fontWeight="bold" textAlign="left" fontSize="lg">Your balance</Text>
+      <Text fontWeight="bold" textAlign="left" fontSize="lg">
+        Your balance
+      </Text>
       <Flex justify="space-between" ps="0px" pe="20px" pt="5px">
         <Flex align="center" w="100%">
           <Button
@@ -77,7 +82,7 @@ export default function TotalSpent(props) {
             h="37px"
             lineHeight="100%"
             borderRadius="10px"
-            size="sm" 
+            size="sm"
             {...rest}
           >
             <Icon as={MdBarChart} color={iconColor} w="24px" h="24px" />
@@ -86,20 +91,25 @@ export default function TotalSpent(props) {
       </Flex>
       <Flex w="100%" flexDirection={{ base: 'column', lg: 'row' }}>
         <Flex flexDirection="column" me="20px" mt="28px">
-          <Text
-            color={textColor}
-            fontSize="34px"
-            textAlign="start"
-            fontWeight="700"
-            lineHeight="100%"
-          >
-            $37.5K
-          </Text>
+          <Flex align="flex-end">
+            <Text
+              color={textColor}
+              fontSize="34px"
+              textAlign="start"
+              fontWeight="700"
+              lineHeight="100%"
+            >
+              {balance}
+            </Text>
+            <Text fontWeight="bold" fontSize="16px" ml="4px">
+              APT
+            </Text>
+          </Flex>
           <Flex align="center" mb="20px">
             <Flex align="center">
               <Icon as={RiArrowUpSFill} color="green.500" me="2px" mt="2px" />
               <Text color="green.500" fontSize="sm" fontWeight="700">
-                +2.45%
+                {roundDown(5.24 * balance)} $
               </Text>
             </Flex>
           </Flex>

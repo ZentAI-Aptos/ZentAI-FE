@@ -111,7 +111,7 @@ export const useShieldedVault = () => {
       amount: toRawAmount(amount, tokenType),
       recipient: account.address,
     };
-    await withdraw(withdrawParams);
+    return await withdraw(withdrawParams);
   };
 
   return {

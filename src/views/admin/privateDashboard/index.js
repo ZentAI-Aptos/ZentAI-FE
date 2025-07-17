@@ -14,7 +14,7 @@ import Usa from 'assets/img/dashboards/usa.png';
 import MiniCalendar from 'components/calendar/MiniCalendar';
 import MiniStatistics from 'components/card/MiniStatistics';
 import IconBox from 'components/icons/IconBox';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   MdAddTask,
   MdAttachMoney,
@@ -34,14 +34,30 @@ import {
 import tableDataCheck from 'views/admin/default/variables/tableDataCheck.json';
 import tableDataComplex from 'views/admin/privateDashboard/variables/tableDataComplex.json';
 import TotalSpent from 'views/admin/privateDashboard/components/TotalSpent';
+import { useQuery } from 'react-query';
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import axios from 'axios';
 
 export default function PrivateDashboard() {
   // Chakra Color Mode
+  const { account } = useWallet();
   const brandColor = useColorModeValue('brand.500', 'white');
   const boxBg = useColorModeValue('secondaryGray.300', 'whiteAlpha.100');
+  const [vaultUserBalance, setVaultUserBalance] = useState(null);
+  const vaultBalanceQuery = useQuery(
+    ['vaultUserBalance'],
+    async () => {
+      const address = account?.address?.toString();
+      if (!address) return 0;
+      let url = `${process.env.REACT_APP_API_URL}/api/balance?address=${address}`;
+      const res = await axios.get(url);
+      setVaultUserBalance(res.data.balance ?? 0)
+    },
+    { enabled: !!account?.address },
+  );
   return (
     <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
-      <TotalSpent />
+      <TotalSpent balance={vaultUserBalance} />
       {/* <SimpleGrid
         columns={{ base: 1, md: 2, lg: 3, '2xl': 3 }}
         gap="20px"
