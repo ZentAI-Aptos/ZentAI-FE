@@ -8,7 +8,7 @@ export const DATASET_CONTRACT= {
 }
 
 export const VAULT_CONTRACT_ADDRESS = {
-    packageId: "0x3f961f8d17a9c7bd42b1ccb1c16ede72525c992e6d8bbf49817a1dda85eaed58"
+    packageId: "0x8e76c4f5c63934f83d1a5d3aae922b0b9b4537e89a5568874a486ed4d541581c"
 }
 
 export const COINS = {

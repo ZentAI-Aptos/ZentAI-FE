@@ -33,12 +33,6 @@ const buildWithdrawPayload = async (params) => {
     coinType,
     amount,
     recipient,
-    merkleRoot,
-    nullifierHash,
-    changeCommitmentBytes,
-    changeCiphertextBytes,
-    changeRangeProofBytes,
-    linkingProofBytes,
   } = params;
 
   return {
@@ -47,12 +41,6 @@ const buildWithdrawPayload = async (params) => {
     functionArguments: [
       String(amount),
       recipient,
-      merkleRoot,
-      nullifierHash,
-      changeCommitmentBytes,
-      changeCiphertextBytes,
-      changeRangeProofBytes,
-      linkingProofBytes,
     ],
   };
 };

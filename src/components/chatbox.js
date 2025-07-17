@@ -211,6 +211,23 @@ export default function ChatBox(props) {
       setIsLoading(false);
     }
   };
+  const { loading, deposit, withdraw } = useShieldedVault();
+  const handleWithdraw = async () => {
+    console.log('Withdrawing funds...');
+
+    // 1. Define transaction parameters
+    const amountToWithdraw = 5000000; // 0.5 APT
+    const recipient = account.address;
+    // 3. Generate all required proofs off-chain
+
+    // 4. Call the contract with the generated proofs
+    const withdrawParams = {
+      coinType: COINS.APT.type,
+      amount: amountToWithdraw,
+      recipient,
+    };
+    await withdraw(withdrawParams);
+  };
 
   return (
     <Card
@@ -255,6 +272,14 @@ export default function ChatBox(props) {
           borderRadius="100px"
         >
           Send
+        </Button>
+        <Button
+          onClick={handleWithdraw}
+          isLoading={isLoading}
+          colorScheme="brand"
+          borderRadius="100px"
+        >
+          withdraw
         </Button>
       </Flex>
     </Card>
