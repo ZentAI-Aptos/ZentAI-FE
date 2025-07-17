@@ -30,7 +30,7 @@ const routes = [
     name: 'Dashboard',
     title: "Global Protocol Dashboard",
     layout: '/admin',
-    path: '/global-dashboard',
+    path: '/default',
     icon: <Icon as={FaCircleNotch} width="20px" height="20px" color="inherit" />,
     component: <GlobalDashboard />,
   },
@@ -45,7 +45,7 @@ const routes = [
   {
     name: 'Transactions',
     layout: '/admin',
-    path: '/default',
+    path: '/transactions',
     icon: (
       <Icon as={GrTransaction} width="20px" height="20px" color="inherit" />
     ),

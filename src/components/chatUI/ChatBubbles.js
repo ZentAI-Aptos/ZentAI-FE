@@ -15,6 +15,7 @@ const BotMessageRender = ({ msg }) => {
     swapOnPancake,
     swapOnLiquid,
   } = useAptosRouterSwap();
+
   const [actionStatus, setActionStatus] = useState('pending');
   const [loading, setLoading] = useState(false);
   const userBg = useColorModeValue('blue.500', 'blue.400');
@@ -23,29 +24,12 @@ const BotMessageRender = ({ msg }) => {
   const botColor = useColorModeValue('gray.800', 'white');
   const { transfer } = useAptosTransfer();
 
-  const { loading: loadingDepVault, handleDeposit } = useShieldedVault();
-  
+  const {
+    loading: loadingDepVault,
+    handleDeposit,
+    handleWithdraw,
+  } = useShieldedVault();
 
-  // const handleWithdraw = async () => {
-  //   console.log('Withdrawing funds...');
-
-  //   // 1. Define transaction parameters
-  //   const amountToWithdraw = 50000000; // 0.5 APT
-  //   const recipient = '0x_some_address';
-
-  //   // 2. Fetch the user's private note and its Merkle proof from local storage/state
-  //   const inputNote = { value: 100000000, blindingFactor: '...' }; // User must track their notes
-
-  //   // 3. Generate all required proofs off-chain
-
-  //   // 4. Call the contract with the generated proofs
-  //   const withdrawParams = {
-  //     coinType: COINS.APT.type,
-  //     amount: amountToWithdraw,
-  //     recipient,
-  //   };
-  //   await withdraw(withdrawParams);
-  // };
   if (msg?.action == 'get_balance')
     return (
       <Flex
@@ -282,7 +266,7 @@ const BotMessageRender = ({ msg }) => {
           </Flex>
         )}
       </Flex>
-    );
+    );  
   if (msg?.action == 'deposit_vault')
     return (
       <Flex
@@ -358,6 +342,98 @@ const BotMessageRender = ({ msg }) => {
                 setLoading(true);
                 try {
                   await handleDeposit(msg?.amount, msg?.token);
+                  setActionStatus('confirmed');
+                  toast.success('Transfer successful!');
+                } catch (e) {
+                  if (e?.message) toast.error(e.message);
+                  setActionStatus('pending');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              isLoading={loading}
+            >
+              Confirm
+            </Button>
+          </Flex>
+        )}
+      </Flex>
+    );
+  if (msg?.action == 'withdraw_vault')
+    return (
+      <Flex
+        sx={{
+          minW: '320px',
+          flexDirection: 'column',
+          alignSelf: 'flex-start',
+        }}
+      >
+        <Flex
+          sx={{
+            flexDirection: 'column',
+            boxShadow: '1px 2px 8px rgba(0, 0, 0, 0.12)',
+            borderRadius: '8px',
+            px: '12px',
+            py: '12px',
+            w: '100%',
+            alignItems: 'flex-start',
+          }}
+        >
+          <Flex
+            sx={{
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <Text fontWeight="bold">Withdraw Vault</Text>
+            {actionStatus === 'pending' ? (
+              <Text color="orange.500">Pending</Text>
+            ) : actionStatus === 'confirmed' ? (
+              <Text color="green.500">Confirmed</Text>
+            ) : (
+              <Text color="gray.500">Canceled</Text>
+            )}
+          </Flex>
+          <Flex
+            sx={{
+              justifyContent: 'space-between',
+              width: '100%',
+              mt: '16px',
+            }}
+            align="flex-end"
+          >
+            <Flex align="flex-end" gap="4px">
+              {/* <Text></Text> */}
+              {/* <AddressCopier address={msg?.address} /> */}
+            </Flex>
+            <Flex align="flex-end" gap="4px">
+              <Text fontWeight="bold">{roundDown(msg?.amount, 4)}</Text>
+              <Text fontWeight="bold">{msg?.token}</Text>
+            </Flex>
+          </Flex>
+        </Flex>
+        {actionStatus === 'pending' && (
+          <Flex mt="8px" gap="4px">
+            <Button
+              borderRadius="8px"
+              w="100%"
+              variant="outline"
+              colorScheme="brand"
+              onClick={() => setActionStatus('canceled')}
+              isDisabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              borderRadius="8px"
+              w="100%"
+              variant="solid"
+              colorScheme="brand"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await handleWithdraw(msg?.amount, msg?.token);
                   setActionStatus('confirmed');
                   toast.success('Transfer successful!');
                 } catch (e) {

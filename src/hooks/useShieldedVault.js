@@ -27,19 +27,12 @@ const buildDepositPayload = async ({
 };
 
 const buildWithdrawPayload = async (params) => {
-  const {
-    coinType,
-    amount,
-    recipient,
-  } = params;
+  const { coinType, amount, recipient } = params;
 
   return {
     function: `${VAULT_CONTRACT_ADDRESS.packageId}::shielded_vault::withdraw`,
     typeArguments: [coinType],
-    functionArguments: [
-      String(amount),
-      recipient,
-    ],
+    functionArguments: [String(amount), recipient],
   };
 };
 
@@ -81,11 +74,11 @@ export const useShieldedVault = () => {
     executeTransaction(buildInitializePayload, params);
   const deposit = (params) => executeTransaction(buildDepositPayload, params);
   const withdraw = (params) => executeTransaction(buildWithdrawPayload, params);
-  
+
   const handleDeposit = async (amount, token) => {
     console.log('Depositing funds...');
     const tokenType = COINS[token]?.type;
-    
+
     if (!amount || !tokenType) {
       toast.error('Please provide valid amount and token');
       return;
@@ -106,6 +99,22 @@ export const useShieldedVault = () => {
     };
     await deposit(depositParams);
   };
+  const handleWithdraw = async (amount, token) => {
+    console.log('Withdrawing funds...');
+    const tokenType = COINS[token]?.type;
+
+    if (!amount || !tokenType) {
+      toast.error('Please provide valid amount and token');
+      return;
+    }
+
+    const withdrawParams = {
+      coinType: COINS.APT.type,
+      amount: toRawAmount(amount, tokenType),
+      recipient: account.address,
+    };
+    await withdraw(withdrawParams);
+  };
 
   return {
     loading,
@@ -113,6 +122,7 @@ export const useShieldedVault = () => {
     initializeVault,
     deposit,
     withdraw,
-    handleDeposit
+    handleDeposit,
+    handleWithdraw,
   };
 };

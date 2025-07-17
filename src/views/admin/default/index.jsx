@@ -37,43 +37,43 @@ import TotalSpent from 'views/admin/default/components/TotalSpent';
 
 export default function UserReports() {
   // Chakra Color Mode
-  const brandColor = useColorModeValue("brand.500", "white");
-  const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
+  const brandColor = useColorModeValue('brand.500', 'white');
+  const boxBg = useColorModeValue('secondaryGray.300', 'whiteAlpha.100');
   return (
-    <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
+    <Box pt={{ base: '130px', md: '80px', xl: '80px' }}>
       <SimpleGrid
-        columns={{ base: 1, md: 2, lg: 3, "2xl": 3 }}
-        gap='20px'
-        mb='20px'>
+        columns={{ base: 1, md: 2, lg: 3, '2xl': 3 }}
+        gap="20px"
+      >
         <MiniStatistics
           startContent={
             <IconBox
-              w='56px'
-              h='56px'
+              w="56px"
+              h="56px"
               bg={boxBg}
               icon={
-                <Icon w='32px' h='32px' as={MdBarChart} color={brandColor} />
+                <Icon w="32px" h="32px" as={MdBarChart} color={brandColor} />
               }
             />
           }
-          name='Earnings'
-          value='$350.4'
+          name="Earnings"
+          value="$350.4"
         />
         <MiniStatistics
           startContent={
             <IconBox
-              w='56px'
-              h='56px'
+              w="56px"
+              h="56px"
               bg={boxBg}
               icon={
-                <Icon w='32px' h='32px' as={MdAttachMoney} color={brandColor} />
+                <Icon w="32px" h="32px" as={MdAttachMoney} color={brandColor} />
               }
             />
           }
-          name='Spend this month'
-          value='$642.39'
+          name="Spend this month"
+          value="$642.39"
         />
-        <MiniStatistics growth='+23%' name='Sales' value='$574.34' />
+        <MiniStatistics growth="+23%" name="Sales" value="$574.34" />
         {/* <MiniStatistics
           endContent={
             <Flex me='-16px' mt='10px'>
@@ -123,15 +123,14 @@ export default function UserReports() {
         /> */}
       </SimpleGrid>
 
-      <SimpleGrid columns={{ base: 1, md: 2, xl: 1 }} gap='20px' mb='20px'>
-        
+      <SimpleGrid columns={{ base: 1, md: 2, xl: 1 }} gap="20px" mb="20px">
         {/* <WeeklyRevenue /> */}
         {/* <ChatBox /> */}
       </SimpleGrid>
       <ComplexTable
-          columnsData={columnsDataComplex}
-          tableData={tableDataComplex}
-        />
+        columnsData={columnsDataComplex}
+        tableData={tableDataComplex}
+      />
       {/* <SimpleGrid columns={{ base: 1, md: 1, xl: 2 }} gap='20px' mb='20px'>
         <CheckTable columnsData={columnsDataCheck} tableData={tableDataCheck} />
         <SimpleGrid columns={{ base: 1, md: 2, xl: 2 }} gap='20px'>
