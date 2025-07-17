@@ -18,13 +18,11 @@ const buildInitializePayload = async ({ coinType }) => {
 const buildDepositPayload = async ({
   coinType,
   amount,
-  commitmentPoint,
-  ciphertext,
 }) => {
   return {
     function: `${VAULT_CONTRACT_ADDRESS.packageId}::shielded_vault::deposit`,
     typeArguments: [coinType],
-    functionArguments: [String(amount), commitmentPoint, ciphertext],
+    functionArguments: [String(amount)],
   };
 };
 
