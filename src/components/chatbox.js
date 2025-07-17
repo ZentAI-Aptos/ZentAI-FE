@@ -183,6 +183,24 @@ export default function ChatBox(props) {
             }
             break;
           }
+          case 'withdraw_vault': {
+            const { amount, token } = args;
+            if (!amount || !token) {
+              botReplyText =
+                'Please specify the amount and token you want to withdraw.';
+            } else {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: 1,
+                  action: name,
+                  amount: amount,
+                  token: token.toUpperCase(),
+                },
+              ]);
+            }
+            break;
+          }
           default:
             botReplyText = `Recognized function '${name}', but no handler is implemented.`;
         }
@@ -210,23 +228,6 @@ export default function ChatBox(props) {
     } finally {
       setIsLoading(false);
     }
-  };
-  const { loading, deposit, withdraw } = useShieldedVault();
-  const handleWithdraw = async () => {
-    console.log('Withdrawing funds...');
-
-    // 1. Define transaction parameters
-    const amountToWithdraw = 5000000; // 0.5 APT
-    const recipient = account.address;
-    // 3. Generate all required proofs off-chain
-
-    // 4. Call the contract with the generated proofs
-    const withdrawParams = {
-      coinType: COINS.APT.type,
-      amount: amountToWithdraw,
-      recipient,
-    };
-    await withdraw(withdrawParams);
   };
 
   return (
@@ -272,14 +273,6 @@ export default function ChatBox(props) {
           borderRadius="100px"
         >
           Send
-        </Button>
-        <Button
-          onClick={handleWithdraw}
-          isLoading={isLoading}
-          colorScheme="brand"
-          borderRadius="100px"
-        >
-          withdraw
         </Button>
       </Flex>
     </Card>
