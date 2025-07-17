@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { Box, Button, Flex, Input, useColorModeValue } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  Image,
+  Input,
+  useColorModeValue,
+} from '@chakra-ui/react';
 import axios from 'axios';
 import Card from 'components/card/Card.js';
 import ChatBubbles from 'components/chatUI/ChatBubbles';
@@ -10,25 +17,25 @@ import { useWalletBalances } from 'hooks/useWalletBalances';
 import { Message } from 'react-chat-ui';
 import { COINS } from 'utils/const';
 import { useShieldedVault } from 'hooks/useShieldedVault';
+import { useMutation, useQuery } from 'react-query';
+import toast from 'react-hot-toast';
 
 const aptosConfig = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(aptosConfig);
 
 const TOKEN_MAP = {
   APT: '0x1::aptos_coin::AptosCoin',
-  USDT: '0x123...::usdt::USDT', // Example: Replace with actual testnet USDT address
-  USDC: '0x456...::usdc::USDC', // Example: Replace with actual testnet USDC address
+  USDT: '0x123...::usdt::USDT',
+  USDC: '0x456...::usdc::USDC',
 };
 
 export default function ChatBox(props) {
   const { ...rest } = props;
   const { account } = useWallet();
+  const [chatid, setChatId] = useState(null);
 
-  const [messages, setMessages] = useState([
-    { id: 1, message: 'Hello! How can I help you today?' },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [currentInput, setCurrentInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef(null);
 
   const API_ENDPOINT = 'http://localhost:8000/command';
@@ -39,173 +46,138 @@ export default function ChatBox(props) {
     fetchExternalBalance,
   } = useWalletBalances();
 
-  // Auto-scroll chat to bottom
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
+  const initChatMutation = useMutation(async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/conversations/init`,
+        {
+          userId: account?.address?.toString(),
+        },
+      );
 
-  const handleSend = async () => {
-    if (!currentInput.trim() || isLoading) return;
+      setChatId(response.data._id);
+      setMessages((prev) => [
+        ...prev,
+        { id: 1, message: 'Hello, how can I assist you today?' },
+      ]);
+    } catch (error) {
+      console.error('Error initializing chat:', error);
+      setMessages([
+        {
+          id: 1,
+          message: 'Failed to initialize chat. Please try again later.',
+        },
+      ]);
+    }
+  });
+
+  const sendMessageMutation = useMutation(async (message) => {
+    if (!currentInput.trim()) return;
 
     const userMessage = new Message({ id: 0, message: currentInput });
     setMessages((prev) => [...prev, userMessage]);
     setCurrentInput('');
-    setIsLoading(true);
-
     try {
-      const response = await axios.post(API_ENDPOINT, {
-        command: userMessage.message,
-      });
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/chat`,
+        {
+          userId: account?.address?.toString(),
+          command: userMessage.message,
+          chatid: chatid,
+        },
+      );
+      const { type, payload } = response.data;
       let botReplyText = '';
 
-      if (typeof response.data === 'object' && response.data.name) {
-        const { name, arguments: args } = response.data;
-
-        switch (name) {
-          case 'transfer_money': {
-            const { recipient, amount, token } = args;
-            if (!recipient || !amount || !token) {
-              botReplyText =
-                'Please specify the recipient, amount, and token for the transfer.';
+      if (type === 'command') {
+        const action = payload.action;
+        switch (action) {
+          case 'transfer_money':
+            if (payload.message) {
+              botReplyText = payload.message;
             } else {
               setMessages((prev) => [
                 ...prev,
                 {
                   id: 1,
-                  action: name,
-                  address: recipient,
-                  token: token,
-                  amount: amount,
+                  action,
+                  address: payload.address,
+                  token: payload.token,
+                  amount: payload.amount,
+                  transactionId: payload.transactionId,
+                  status: payload.status,
                 },
               ]);
             }
             break;
-          }
-          case 'swap_token': {
-            const { from_token, to_token, amount: swapAmount } = args;
-            if (!from_token || !to_token || !swapAmount) {
-              botReplyText =
-                'Please specify which token you want to swap, which token you want to receive, and the amount.';
+          case 'swap_token':
+            if (payload.message) {
+              botReplyText = payload.message;
             } else {
               setMessages((prev) => [
                 ...prev,
                 {
                   id: 1,
-                  action: name,
-                  from: from_token?.toUpperCase(),
-                  to: to_token?.toUpperCase(),
-                  amount: swapAmount,
+                  action,
+                  from: payload.from,
+                  to: payload.to,
+                  amount: payload.amount,
+                  transactionId: payload.transactionId,
+                  status: payload.status,
                 },
               ]);
             }
             break;
-          }
-          case 'get_token_price': {
-            const { token_name } = args;
-            if (!token_name) {
-              botReplyText = "Which token's price would you like to know?";
-            } else {
-              const price = (Math.random() * 50000 + 10000).toFixed(2);
-              botReplyText = `The current price of ${token_name.toUpperCase()} is $${price}.`;
-            }
+          case 'get_token_price':
+            botReplyText = payload.message;
             break;
-          }
-          case 'get_balance': {
-            const externalWalletAddress =
-              args.wallet_address || account?.address?.toString();
-            const tokenSymbol = args.token_name?.toUpperCase();
-
-            if (!tokenSymbol) {
-              botReplyText = 'Please specify the token (e.g., APT, USDT).';
-            } else if (externalWalletAddress) {
-              try {
-                const result = await fetchExternalBalance(
-                  externalWalletAddress,
-                  tokenSymbol,
-                );
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: 1,
-                    action: name,
-                    address: externalWalletAddress,
-                    token: tokenSymbol,
-                    amount: result.amount,
-                  },
-                ]);
-              } catch (error) {
-                botReplyText = error.message;
-              }
-            } else {
-              if (!account?.address) {
-                botReplyText = 'Please connect your wallet first.';
-              } else if (balancesLoading) {
-                botReplyText =
-                  'Still fetching your wallet balances, please wait a moment...';
-              } else {
-                const tokenInfo = connectedWalletBalances[tokenSymbol];
-                if (tokenInfo) {
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: 1,
-                      action: name,
-                      address: account.address,
-                      token: tokenSymbol,
-                      amount: tokenInfo.amount,
-                    },
-                  ]);
-                } else {
-                  botReplyText = `Could not find balance for token '${tokenSymbol}'. It might not be supported or you may not have any.`;
-                }
-              }
-            }
-            break;
-          }
-          case 'deposit_vault': {
-            const { amount, token } = args;
-            if (!amount || !token) {
-              botReplyText =
-                'Please specify the amount and token you want to deposit.';
+          case 'get_balance':
+            if (payload.message) {
+              botReplyText = payload.message;
             } else {
               setMessages((prev) => [
                 ...prev,
                 {
                   id: 1,
-                  action: name,
-                  amount: amount,
-                  token: token.toUpperCase(),
+                  action,
+                  address: payload.address,
+                  token: payload.token,
+                  amount: payload.amount,
                 },
               ]);
             }
             break;
-          }
-          case 'withdraw_vault': {
-            const { amount, token } = args;
-            if (!amount || !token) {
-              botReplyText =
-                'Please specify the amount and token you want to withdraw.';
+          case 'deposit_vault':
+          case 'withdraw_vault':
+            if (payload.message) {
+              botReplyText = payload.message;
             } else {
               setMessages((prev) => [
                 ...prev,
                 {
                   id: 1,
-                  action: name,
-                  amount: amount,
-                  token: token.toUpperCase(),
+                  action,
+                  amount: payload.amount,
+                  token: payload.token,
+                  transactionId: payload.transactionId,
+                  status: payload.status,
                 },
               ]);
             }
             break;
-          }
           default:
-            botReplyText = `Recognized function '${name}', but no handler is implemented.`;
+            botReplyText =
+              payload.message ||
+              `Recognized function '${action}', but no handler is implemented.`;
         }
-      } else if (typeof response.data === 'string') {
-        botReplyText = response.data;
+      } else if (type === 'text') {
+        botReplyText = payload.message;
       } else {
         botReplyText =
           'Sorry, I received an unexpected response from the server.';
@@ -225,10 +197,8 @@ export default function ChatBox(props) {
         ...prev,
         new Message({ id: 1, message: errorMsg }),
       ]);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
   return (
     <Card
@@ -252,8 +222,24 @@ export default function ChatBox(props) {
             borderRadius: '24px',
           },
         }}
+        display="flex"
       >
-        <ChatBubbles messages={messages} isLoading={isLoading} />
+        {!chatid && (
+          <Flex flex={1} justify="center" align="center" direction="column">
+            <Image
+              src="/assets/logo.png"
+              alt="Chatbot"
+              boxSize="150px"
+              mb={4}
+            />
+          </Flex>
+        )}
+        {chatid && (
+          <ChatBubbles
+            messages={messages}
+            isLoading={sendMessageMutation.isLoading}
+          />
+        )}
       </Box>
 
       <Flex w="100%" p="10px" mt="auto">
@@ -261,19 +247,34 @@ export default function ChatBox(props) {
           placeholder="Type your message..."
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          disabled={isLoading}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessageMutation.mutate()}
+          disabled={!chatid || sendMessageMutation.isLoading}
           mr={2}
           borderRadius="100px"
         />
-        <Button
-          onClick={handleSend}
-          isLoading={isLoading}
-          colorScheme="brand"
-          borderRadius="100px"
-        >
-          Send
-        </Button>
+
+        {chatid ? (
+          <Button
+            onClick={() => sendMessageMutation.mutate()}
+            isLoading={sendMessageMutation.isLoading}
+            colorScheme="brand"
+            borderRadius="100px"
+          >
+            Send
+          </Button>
+        ) : (
+          <Button
+            colorScheme="brand"
+            borderRadius="100px"
+            px="20px"
+            isLoading={initChatMutation.isLoading}
+            onClick={() => {
+              initChatMutation.mutate();
+            }}
+          >
+            Start Chat
+          </Button>
+        )}
       </Flex>
     </Card>
   );

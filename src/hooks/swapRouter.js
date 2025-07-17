@@ -82,6 +82,7 @@ export const useAptosRouterSwap = () => {
         });
 
         setTxResult({ success: true, hash: response.hash });
+        return { success: true, hash: response.hash };
       } catch (error) {
         console.error('Transaction error:', error);
         setTxResult({ success: false, message: error.message });

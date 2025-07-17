@@ -40,7 +40,10 @@ export function useAptosTransfer() {
           },
         });
         setTxHash(response.hash);
-        return response.hash;
+        return {
+          success: true,
+          txHash: response.hash,
+        };
       } catch (e) {
         setError(e.message || 'Transfer failed');
         toast.error(e.message || 'Transfer failed');

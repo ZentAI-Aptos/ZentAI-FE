@@ -15,10 +15,7 @@ const buildInitializePayload = async ({ coinType }) => {
   };
 };
 
-const buildDepositPayload = async ({
-  coinType,
-  amount,
-}) => {
+const buildDepositPayload = async ({ coinType, amount }) => {
   return {
     function: `${VAULT_CONTRACT_ADDRESS.packageId}::shielded_vault::deposit`,
     typeArguments: [coinType],
@@ -60,6 +57,7 @@ export const useShieldedVault = () => {
           transactionHash: response.hash,
         });
         setTxResult({ success: true, hash: response.hash });
+        return { success: true, hash: response.hash };
       } catch (error) {
         console.error('Transaction Error:', error);
         setTxResult({ success: false, message: error.message });
@@ -94,10 +92,10 @@ export const useShieldedVault = () => {
     const depositParams = {
       coinType: COINS.APT.type,
       amount: formatedAmount,
-      commitmentPoint,
-      ciphertext,
+      // commitmentPoint,
+      // ciphertext,
     };
-    await deposit(depositParams);
+    return await deposit(depositParams);
   };
   const handleWithdraw = async (amount, token) => {
     console.log('Withdrawing funds...');

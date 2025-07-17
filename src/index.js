@@ -7,6 +7,7 @@ import { PetraWallet } from 'petra-plugin-wallet-adapter';
 import { toast, Toaster } from 'react-hot-toast';
 import App from './App';
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 const wallets = [
   new PetraWallet(),
@@ -15,6 +16,7 @@ const wallets = [
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 const NETWORK = 'testnet'; // or 'mainnet'
+const queryClient = new QueryClient();
 root.render(
   <>
     <AptosWalletAdapterProvider
@@ -32,9 +34,11 @@ root.render(
         toast.error(error.message || 'Unknown wallet error');
       }}
     >
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     </AptosWalletAdapterProvider>{' '}
     <Toaster />
   </>,

@@ -8,8 +8,9 @@ import {
 } from '@chakra-ui/react';
 import { CopyIcon, CheckIcon } from '@chakra-ui/icons';
 import { addressShortener } from 'utils';
+import { isValidHexAddress } from 'utils';
 
-const AddressCopier = ({ address, digits = 5, ...rest}) => {
+const AddressCopier = ({ address, digits = 5, ...rest }) => {
   const toast = useToast();
   const { hasCopied, onCopy } = useClipboard(address);
 
@@ -26,12 +27,10 @@ const AddressCopier = ({ address, digits = 5, ...rest}) => {
   };
 
   if (!address) return null;
-
+  if (!isValidHexAddress(address)) return address;
   return (
     <Flex align="flex-end">
-      <Text {...rest}>
-        {addressShortener(address, digits)}
-      </Text>
+      <Text {...rest}>{addressShortener(address, digits)}</Text>
       <IconButton
         mb="-4px"
         ml={0}

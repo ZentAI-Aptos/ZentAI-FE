@@ -26,3 +26,20 @@ export const postData = async (endpoint, payload, token = null) => {
     throw error;
   }
 };
+export const updateTransactionStatus = async (
+  transactionId,
+  status,
+  txHash = null,
+) => {
+  try {
+    await axios.post(
+      `${ENTRY_POINT}/api/transactions/${transactionId}/update`,
+      {
+        status,
+        txHash,
+      },
+    );
+  } catch (e) {
+    console.error('Update transaction failed:', e);
+  }
+};

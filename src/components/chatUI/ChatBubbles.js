@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import AddressCopier from 'components/addresscopier';
 import { useAptosRouterSwap } from 'hooks/swapRouter';
 import { useShieldedVault } from 'hooks/useShieldedVault';
+import { updateTransactionStatus } from 'api';
 
 const BotMessageRender = ({ msg }) => {
   const {
@@ -42,7 +43,6 @@ const BotMessageRender = ({ msg }) => {
           borderRadius: '8px',
           px: '8px',
           py: '8px',
-          // mx: "20px"
         }}
       >
         <Text>Balance</Text>
@@ -122,7 +122,13 @@ const BotMessageRender = ({ msg }) => {
               w="100%"
               variant="outline"
               colorScheme="brand"
-              onClick={() => setActionStatus('canceled')}
+              onClick={async () => {
+                setActionStatus('canceled');
+                console.log(msg?.transactionId);
+                if (msg?.transactionId) {
+                  await updateTransactionStatus(msg.transactionId, 'rejected');
+                }
+              }}
               isDisabled={loading}
             >
               Cancel
@@ -135,9 +141,22 @@ const BotMessageRender = ({ msg }) => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  await transfer(msg?.address, msg?.amount, msg?.token);
-                  setActionStatus('confirmed');
-                  toast.success('Transfer successful!');
+                  const result = await transfer(
+                    msg?.address,
+                    msg?.amount,
+                    msg?.token,
+                  );
+                  if (result?.success && result?.txHash) {
+                    setActionStatus('confirmed');
+                    toast.success('Transfer successful!');
+                    if (msg?.transactionId) {
+                      await updateTransactionStatus(
+                        msg.transactionId,
+                        'verified',
+                        result.txHash,
+                      );
+                    }
+                  }
                 } catch (e) {
                   if (e?.message) toast.error(e.message);
                   setActionStatus('pending');
@@ -217,9 +236,22 @@ const BotMessageRender = ({ msg }) => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  await swapOnPancake(msg?.from, msg?.to, msg?.amount);
-                  setActionStatus('confirmed');
-                  toast.success('Transfer successful!');
+                  const result = await swapOnPancake(
+                    msg?.from,
+                    msg?.to,
+                    msg?.amount,
+                  );
+                  if (result?.success == true && result?.hash) {
+                    setActionStatus('confirmed');
+                    toast.success('Swap successful!');
+                    if (msg?.transactionId) {
+                      await updateTransactionStatus(
+                        msg.transactionId,
+                        'verified',
+                        result.hash,
+                      );
+                    }
+                  }
                 } catch (e) {
                   if (e?.message) toast.error(e.message);
                   setActionStatus('pending');
@@ -240,8 +272,6 @@ const BotMessageRender = ({ msg }) => {
                 setLoading(true);
                 try {
                   await swapOnLiquid(msg?.from, msg?.to, msg?.amount);
-                  // setActionStatus('confirmed');
-                  toast.success('Transfer successful!');
                 } catch (e) {
                   if (e?.message) toast.error(e.message);
                   setActionStatus('pending');
@@ -258,7 +288,13 @@ const BotMessageRender = ({ msg }) => {
               w="100%"
               variant="outline"
               colorScheme="brand"
-              onClick={() => setActionStatus('canceled')}
+              onClick={async () => {
+                setActionStatus('canceled');
+                console.log(msg?.transactionId);
+                if (msg?.transactionId) {
+                  await updateTransactionStatus(msg.transactionId, 'rejected');
+                }
+              }}
               isDisabled={loading}
             >
               Cancel
@@ -266,7 +302,7 @@ const BotMessageRender = ({ msg }) => {
           </Flex>
         )}
       </Flex>
-    );  
+    );
   if (msg?.action == 'deposit_vault')
     return (
       <Flex
@@ -311,10 +347,7 @@ const BotMessageRender = ({ msg }) => {
             }}
             align="flex-end"
           >
-            <Flex align="flex-end" gap="4px">
-              {/* <Text></Text> */}
-              {/* <AddressCopier address={msg?.address} /> */}
-            </Flex>
+            <Flex align="flex-end" gap="4px"></Flex>
             <Flex align="flex-end" gap="4px">
               <Text fontWeight="bold">{roundDown(msg?.amount, 4)}</Text>
               <Text fontWeight="bold">{msg?.token}</Text>
@@ -328,7 +361,13 @@ const BotMessageRender = ({ msg }) => {
               w="100%"
               variant="outline"
               colorScheme="brand"
-              onClick={() => setActionStatus('canceled')}
+              onClick={async () => {
+                setActionStatus('canceled');
+                console.log(msg?.transactionId);
+                if (msg?.transactionId) {
+                  await updateTransactionStatus(msg.transactionId, 'rejected');
+                }
+              }}
               isDisabled={loading}
             >
               Cancel
@@ -341,9 +380,18 @@ const BotMessageRender = ({ msg }) => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  await handleDeposit(msg?.amount, msg?.token);
-                  setActionStatus('confirmed');
-                  toast.success('Transfer successful!');
+                  const result = await handleDeposit(msg?.amount, msg?.token);
+                  if (result?.success == true && result?.hash) {
+                    setActionStatus('confirmed');
+                    toast.success('Deposit successful!');
+                    if (msg?.transactionId) {
+                      await updateTransactionStatus(
+                        msg.transactionId,
+                        'verified',
+                        result.hash,
+                      );
+                    }
+                  }
                 } catch (e) {
                   if (e?.message) toast.error(e.message);
                   setActionStatus('pending');
@@ -403,10 +451,7 @@ const BotMessageRender = ({ msg }) => {
             }}
             align="flex-end"
           >
-            <Flex align="flex-end" gap="4px">
-              {/* <Text></Text> */}
-              {/* <AddressCopier address={msg?.address} /> */}
-            </Flex>
+            <Flex align="flex-end" gap="4px"></Flex>
             <Flex align="flex-end" gap="4px">
               <Text fontWeight="bold">{roundDown(msg?.amount, 4)}</Text>
               <Text fontWeight="bold">{msg?.token}</Text>
@@ -420,7 +465,13 @@ const BotMessageRender = ({ msg }) => {
               w="100%"
               variant="outline"
               colorScheme="brand"
-              onClick={() => setActionStatus('canceled')}
+              onClick={async () => {
+                setActionStatus('canceled');
+                console.log(msg?.transactionId);
+                if (msg?.transactionId) {
+                  await updateTransactionStatus(msg.transactionId, 'rejected');
+                }
+              }}
               isDisabled={loading}
             >
               Cancel
@@ -433,9 +484,18 @@ const BotMessageRender = ({ msg }) => {
               onClick={async () => {
                 setLoading(true);
                 try {
-                  await handleWithdraw(msg?.amount, msg?.token);
-                  setActionStatus('confirmed');
-                  toast.success('Transfer successful!');
+                  const result = await handleWithdraw(msg?.amount, msg?.token);
+                  if (result?.success == true && result?.hash) {
+                    setActionStatus('confirmed');
+                    toast.success('Withdrawal successful!');
+                    if (msg?.transactionId) {
+                      await updateTransactionStatus(
+                        msg.transactionId,
+                        'verified',
+                        result.hash,
+                      );
+                    }
+                  }
                 } catch (e) {
                   if (e?.message) toast.error(e.message);
                   setActionStatus('pending');
@@ -461,7 +521,6 @@ const BotMessageRender = ({ msg }) => {
         borderRadius="8px"
         maxW="75%"
         fontSize="md"
-        // boxShadow="md"
         wordBreak="break-word"
       >
         <Text textAlign="left" whiteSpace="pre-line">
@@ -479,7 +538,7 @@ export default function ChatBubbles({ messages, isLoading }) {
   const botColor = useColorModeValue('gray.800', 'white');
 
   return (
-    <Flex direction="column" gap={3} py={3} px="20px">
+    <Flex flex={1} direction="column" gap={3} py={3} px="20px">
       {messages.map((msg, idx) => (
         <BotMessageRender key={idx} msg={msg} />
       ))}
@@ -495,7 +554,7 @@ export default function ChatBubbles({ messages, isLoading }) {
             maxW="60%"
             boxShadow="md"
           >
-            <Text>...</Text>
+            <Text>. . .</Text>
           </Box>
         </Flex>
       )}

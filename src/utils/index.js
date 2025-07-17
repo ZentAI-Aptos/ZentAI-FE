@@ -1,7 +1,13 @@
 import { formatUnits, parseUnits } from 'ethers';
 import toast from 'react-hot-toast';
 import { COINS } from './const';
-
+export const isValidHexAddress = (addr = '', length = 64) => {
+  if (typeof addr !== 'string') return false;
+  // Check format 0x + hex
+  if (!addr.startsWith('0x')) return false;
+  const hex = addr.slice(2);
+  return /^[0-9a-fA-F]+$/.test(hex) && hex.length === length;
+};
 export const addressShortener = (addr = '', digits = 5) => {
   digits = 2 * digits >= addr.length ? addr.length : digits;
   return `${addr.substring(0, digits)}...${addr.slice(-digits)}`;

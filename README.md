@@ -1,4 +1,4 @@
-![Zent-AI Dashboard Preview](./assets/banner.png)
+![Zent-AI Dashboard Preview](./public/assets/banner.png)
 # Zent-AI: The Conversational Aptos Dashboard
 
 Zent-AI is a modern Web3 dashboard that makes interacting with the Aptos blockchain simple. Instead of complex interfaces, just chat with our AI assistant to check balances, transfer assets, or swap tokens. Web3 becomes accessible and intuitive for everyone.
