@@ -138,19 +138,61 @@ export default function ChatBox(props) {
             botReplyText = payload.message;
             break;
           case 'get_balance':
-            if (payload.message) {
-              botReplyText = payload.message;
+            console.log(payload);
+            const externalWalletAddress =
+              payload.address || account?.address?.toString();
+            const tokenSymbol = payload.token?.toUpperCase();
+            if (!tokenSymbol) {
+              botReplyText =
+                'I can check a balance for you. Please specify the token (e.g., APT, USDT).';
+            } else if (externalWalletAddress) {
+              try {
+                const result = await fetchExternalBalance(
+                  externalWalletAddress,
+                  tokenSymbol,
+                );
+                console.log(
+                  `Fetched external balance for ${tokenSymbol}:`,
+                  result,
+                );
+
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: 1,
+                    action: payload?.action,
+                    address: externalWalletAddress,
+                    token: tokenSymbol,
+                    amount: result.amount,
+                  },
+                ]);
+              } catch (error) {
+                botReplyText = error.message;
+              }
             } else {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: 1,
-                  action,
-                  address: payload.address,
-                  token: payload.token,
-                  amount: payload.amount,
-                },
-              ]);
+              // Handle connected wallet check
+              if (!account?.address) {
+                botReplyText = 'Please connect your wallet first.';
+              } else if (balancesLoading) {
+                botReplyText =
+                  'Still fetching your wallet balances, please wait a moment...';
+              } else {
+                const tokenInfo = connectedWalletBalances[tokenSymbol];
+                if (tokenInfo) {
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: 1,
+                      action: payload?.action,
+                      address: externalWalletAddress,
+                      token: tokenSymbol,
+                      amount: tokenInfo.amount,
+                    },
+                  ]);
+                } else {
+                  botReplyText = `Could not find balance for token '${tokenSymbol}'. It might not be supported or you may not have any.`;
+                }
+              }
             }
             break;
           case 'deposit_vault':

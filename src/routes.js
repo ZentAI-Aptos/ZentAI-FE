@@ -26,19 +26,19 @@ import { FaUserAlt } from "react-icons/fa";
 
 
 const routes = [
+  // {
+  //   name: 'Dashboard',
+  //   title: "Global Protocol Dashboard",
+  //   layout: '/admin',
+  //   path: '/default',
+  //   icon: <Icon as={FaCircleNotch} width="20px" height="20px" color="inherit" />,
+  //   component: <GlobalDashboard />,
+  // },
   {
     name: 'Dashboard',
-    title: "Global Protocol Dashboard",
-    layout: '/admin',
-    path: '/default',
-    icon: <Icon as={FaCircleNotch} width="20px" height="20px" color="inherit" />,
-    component: <GlobalDashboard />,
-  },
-  {
-    name: 'Private Dashboard',
     title: "Your Private Dashboard",
     layout: '/admin',
-    path: '/vault',
+    path: '/default',
     icon: <Icon as={FaUserAlt} width="20px" height="20px" color="inherit" />,
     component: <PrivateDashboard />,
   },
